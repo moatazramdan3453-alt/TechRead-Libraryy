@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TikRead - منصة الكتب الرقمية</title>
+    <meta name="theme-color" content="#060911">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+                    colors: {
+                        cyber: {
+                            bg: '#060911',
+                            card: 'rgba(17, 24, 39, 0.75)',
+                            border: 'rgba(255, 255, 255, 0.08)',
+                            accent: '#6366f1',
+                            neon: '#a855f7',
+                            cyan: '#06b6d4'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #060911;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(168, 85, 247, 0.15) 0px, transparent 50%);
+            background-attachment: fixed;
+            color: #f1f5f9;
+        }
+        .cyber-glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .cyber-glow:hover {
+            box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+            border-color: rgba(99, 102, 241, 0.5);
+        }
+        .neon-border {
+            border: 1px solid rgba(168, 85, 247, 0.3);
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.15);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="sticky top-0 z-40 cyber-glass border-b border-slate-800/80 shadow-2xl">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo -->
+                <div class="flex items-center space-x-3 space-x-reverse cursor-pointer group" onclick="switchTab('store')">
+                    <div class="relative p-3 rounded-2xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white shadow-lg shadow-indigo-500/25 group-hover:scale-105 transition-all duration-300">
+                        <i class="fa-solid fa-book-open-reader text-2xl animate-pulse"></i>
+                    </div>
+                    <div>
+                        <span class="text-2xl font-black bg-gradient-to-r from-white via-indigo-200 to-purple-400 bg-clip-text text-transparent tracking-wide">TikRead</span>
+                        <span class="text-[10px] block text-indigo-400/80 font-semibold -mt-1 tracking-widest uppercase">مكتبة الكتب الرقمية</span>
+                    </div>
+                </div>
+
+                <!-- Navigation Tabs -->
+                <nav class="hidden lg:flex items-center space-x-1.5 space-x-reverse bg-slate-900/60 p-1.5 rounded-2xl border border-slate-800">
+                    <button id="nav-store" onclick="switchTab('store')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-white bg-indigo-600/80 shadow-lg">
+                        <i class="fa-solid fa-house ml-1.5 text-indigo-300"></i> الرئيسية
+                    </button>
+                    <button id="nav-achievements" onclick="switchTab('achievements')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+                        <i class="fa-solid fa-award ml-1.5 text-cyan-400"></i> إنجازات وتعريفات (<span id="myAchCount">0</span>)
+                    </button>
+                    <button id="nav-favs" onclick="switchTab('favs')" class="px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-slate-400 hover:text-white hover:bg-slate-800/50">
+                        <i class="fa-solid fa-heart ml-1.5 text-rose-400"></i> المفضلة
+                    </button>
+                    <button id="nav-addbook" onclick="switchTab('addbook')" class="hidden px-4 py-2.5 rounded-xl text-xs font-bold transition-all text-cyan-300 bg-cyan-950/60 border border-cyan-500/30">
+                        <i class="fa-solid fa-terminal ml-1.5 text-cyan-400"></i> لوحة الأدمن ⚡
+                    </button>
+                </nav>
+
+                <!-- Actions -->
+                <div class="flex items-center space-x-3 space-x-reverse">
+                    <button id="installAppBtn" onclick="installPWA()" class="hidden items-center gap-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-emerald-600/30">
+                        <i class="fa-solid fa-download"></i> تثبيت التطبيق
+                    </button>
+                    <div id="authArea"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+        <!-- Guest Banner -->
+        <div id="guestBanner" class="hidden mb-8 neon-border bg-slate-900/80 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 backdrop-blur-xl">
+            <div class="flex items-center space-x-4 space-x-reverse">
+                <div class="p-3 bg-indigo-500/10 text-indigo-400 rounded-2xl border border-indigo-500/20">
+                    <i class="fa-solid fa-book-reader text-2xl"></i>
+                </div>
+                <div>
+                    <h4 class="text-sm font-black text-slate-100">انضم إلى مجتمع القراء في TikRead</h4>
+                    <p class="text-xs text-slate-400 mt-1">سجل حسابك القارئ الآن لمتابعة الكتب وتصفح الإصدارات (برمز تحقق عبر الإيميل).</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="openAuthModal('reader')" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-xl text-xs shadow-lg transition">
+                    تسجيل قارئ جديد 📖
+                </button>
+                <button onclick="openAuthModal('admin')" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-bold rounded-xl text-xs border border-slate-700 transition" title="دخول المشرف">
+                    <i class="fa-solid fa-lock"></i> دخول المسؤول ⚡
+                </button>
+            </div>
+        </div>
+
+        <!-- SECTION: STORE -->
+        <section id="sec-store" class="space-y-8">
+            <div class="relative overflow-hidden rounded-3xl cyber-glass p-8 sm:p-12 border border-slate-800/80 shadow-2xl">
+                <div class="absolute -right-20 -top-20 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="relative z-10 max-w-2xl">
+                    <span class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-bold mb-4">
+                        <span class="w-2 h-2 rounded-full bg-indigo-400 animate-ping"></span> مكتبة الكتب الرقمية
+                    </span>
+                    <h1 class="text-3xl sm:text-5xl font-black leading-tight mb-4 tracking-tight">اكتشف واقرأ أحدث الكتب والإصدارات.</h1>
+                    <p class="text-slate-400 text-xs sm:text-sm mb-6 leading-relaxed">تصفح تفاصيل الكتب الشاملة، وقيمتها المحددة بكل سهولة وبدون تعقيدات الدفع.</p>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="text-xl font-bold text-slate-200 mb-6 flex items-center gap-2">
+                    <i class="fa-solid fa-book text-indigo-400"></i> قائمة الكتب المتاحة
+                </h2>
+                <div id="booksGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 sm:gap-6"></div>
+            </div>
+        </section>
+
+        <!-- SECTION: ACHIEVEMENTS & DEFINITIONS -->
+        <section id="sec-achievements" class="hidden space-y-6">
+            <div class="border-b border-slate-800 pb-4 flex justify-between items-center">
+                <div>
+                    <h2 class="text-2xl font-black text-slate-100">تعريفات المنصة وفيديوهات الإنجاز 🏆</h2>
+                    <p class="text-xs text-slate-400 mt-1">تعرف على قصة المنصة، أهدافها، ومشاهد من أبرز الإنجازات.</p>
+                </div>
+            </div>
+            <div id="achievementsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+        </section>
+
+        <!-- SECTION: FAVORITES -->
+        <section id="sec-favs" class="hidden space-y-6">
+            <div class="border-b border-slate-800 pb-4">
+                <h2 class="text-2xl font-black text-slate-100">الكتب المفضلة ❤️</h2>
+            </div>
+            <div id="favsGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5 sm:gap-6"></div>
+        </section>
+
+        <!-- SECTION: ADMIN PANEL -->
+        <section id="sec-addbook" class="hidden max-w-2xl mx-auto space-y-8">
+            <div class="cyber-glass rounded-3xl p-6 sm:p-10 border border-cyan-500/30 shadow-2xl relative">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-black text-slate-100">لوحة التحكم - إضافة كتاب وتحديد السعر 📚</h3>
+                </div>
+                <form onsubmit="addNewBook(event)" class="space-y-4">
+                    <input type="text" id="newBookTitle" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="عنوان الكتاب (مثال: مدينة الزمرد)">
+                    <input type="text" id="newBookAuthor" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="اسم المؤلف">
+                    <div class="grid grid-cols-3 gap-3">
+                        <input type="text" id="newBookCategory" required class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="التصنيف">
+                        <input type="number" id="newBookPages" required class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="الصفحات">
+                        <input type="number" id="newBookYear" required class="bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="السنة">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-emerald-400 mb-1 font-bold">حدد السعر يدوياً ($):</label>
+                        <input type="number" step="0.01" id="newBookPrice" required class="w-full bg-slate-900 border border-emerald-500/50 rounded-xl px-4 py-3 text-xs text-emerald-300 font-black" placeholder="أدخل السعر الذي تريده، مثلاً: 15.00">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-1 font-bold">صورة الغلاف:</label>
+                        <input type="file" id="newBookImageFile" accept="image/*" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-300 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-indigo-600 file:text-white hover:file:bg-indigo-500 cursor-pointer">
+                    </div>
+                    <textarea id="newBookDescription" rows="2" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="نبذة مختصرة عن الكتاب..."></textarea>
+                    <textarea id="newBookContent" rows="3" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="نص الكتاب وقراءته الكاملة..."></textarea>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs">نشر الكتاب بالسعر المخصص ✨</button>
+                </form>
+            </div>
+
+            <div class="cyber-glass rounded-3xl p-6 sm:p-10 border border-amber-500/30 shadow-2xl relative">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-black text-slate-100">نشر تعريف أو فيديو إنجاز 🎬</h3>
+                </div>
+                <form onsubmit="addNewAchievement(event)" class="space-y-4">
+                    <input type="text" id="achTitle" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="عنوان التعريف أو الإنجاز">
+                    <select id="achType" onchange="toggleAchInputType()" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white">
+                        <option value="image">صورة من الجهاز 🖼️</option>
+                        <option value="video">فيديو إنجاز (رابط يوتيوب) 🎥</option>
+                    </select>
+                    <div id="achImageContainer">
+                        <label class="block text-xs text-slate-400 mb-1 font-bold">اختر الصورة:</label>
+                        <input type="file" id="achImageFile" accept="image/*" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-300 file:ml-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-amber-600 file:text-white hover:file:bg-amber-500 cursor-pointer">
+                    </div>
+                    <div id="achVideoContainer" class="hidden">
+                        <input type="url" id="achMediaUrl" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="رابط يوتيوب">
+                    </div>
+                    <textarea id="achDesc" rows="3" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="تفاصيل التعريف أو وصف الإنجاز..."></textarea>
+                    <button type="submit" class="w-full bg-gradient-to-r from-amber-600 to-orange-600 text-white font-bold py-3 rounded-xl text-xs">نشر في قسم التعاريف والإنجازات 🚀</button>
+                </form>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Modal: Book Details -->
+    <div id="detailsModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="cyber-glass rounded-3xl max-w-lg w-full p-6 sm:p-8 border border-indigo-500/30 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeDetailsModal()" class="absolute top-5 left-5 text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+            <div class="flex gap-4 items-start mb-6">
+                <img id="detImage" class="w-28 aspect-[3/4] object-cover rounded-xl border border-slate-800" src="" alt="">
+                <div>
+                    <span id="detCategory" class="px-2.5 py-1 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-bold"></span>
+                    <h3 id="detTitle" class="text-lg font-bold text-slate-100 mt-2"></h3>
+                    <p id="detAuthor" class="text-xs text-indigo-400 mt-0.5"></p>
+                    <div class="flex gap-3 mt-3 text-[11px] text-slate-400">
+                        <span><i class="fa-solid fa-file-lines ml-1 text-amber-400"></i> <span id="detPages"></span> صفحة</span>
+                        <span><i class="fa-solid fa-calendar ml-1 text-emerald-400"></i> سنة <span id="detYear"></span></span>
+                    </div>
+                    <div class="mt-2 text-sm font-black text-emerald-400">السعر المحدد: <span id="detPrice"></span> $</div>
+                </div>
+            </div>
+            <div class="mb-6">
+                <h4 class="text-xs font-bold text-slate-300 mb-1">نبذة عن الكتاب:</h4>
+                <p id="detDesc" class="text-xs text-slate-400 leading-relaxed"></p>
+            </div>
+
+            <!-- Action Button -->
+            <div class="space-y-3 pt-3 border-t border-slate-800">
+                <button id="detReadBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs shadow-lg">قراءة الكتاب 📖</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Auth (Reader / Admin) with OTP -->
+    <div id="authModal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 hidden">
+        <div class="cyber-glass rounded-3xl max-w-md w-full p-6 sm:p-8 border border-indigo-500/30 shadow-2xl relative">
+            <button onclick="closeAuthModal()" class="absolute top-5 left-5 text-slate-400 hover:text-white p-2"><i class="fa-solid fa-xmark text-lg"></i></button>
+            
+            <div id="readerAuthBox" class="hidden">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-black text-slate-100">تسجيل حساب قارئ جديد 📖</h3>
+                    <p class="text-xs text-slate-400 mt-1">أدخل بريدك لاستلام رمز التحقق والانضمام</p>
+                </div>
+                <form id="readerEmailForm" onsubmit="sendReaderOTP(event)" class="space-y-4">
+                    <input type="text" id="readerNameInput" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="اسم القارئ الكامل">
+                    <input type="email" id="readerEmailInput" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="البريد الإلكتروني">
+                    <button type="submit" id="sendReaderOtpBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs">إرسال رمز التحقق</button>
+                </form>
+                <form id="readerVerifyForm" onsubmit="verifyReaderOTP(event)" class="space-y-4 hidden">
+                    <input type="text" id="readerOtpCodeInput" required maxlength="6" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-center font-black tracking-widest text-white" placeholder="123456">
+                    <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">تأكيد ودخول المنصة</button>
+                </form>
+            </div>
+
+            <div id="adminAuthBox" class="hidden">
+                <div class="text-center mb-6">
+                    <h3 class="text-xl font-black text-slate-100">تسجيل دخول المسؤول ⚡</h3>
+                    <p class="text-xs text-slate-400 mt-1">أدخل بريدك لاستلام رمز التحقق (OTP)</p>
+                </div>
+                <form id="otpEmailForm" onsubmit="sendOTP(event)" class="space-y-4">
+                    <input type="email" id="userEmailInput" required class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white" placeholder="example@gmail.com">
+                    <button type="submit" id="sendOtpBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 rounded-xl text-xs">إرسال رمز التحقق</button>
+                </form>
+                <form id="otpVerifyForm" onsubmit="verifyOTP(event)" class="space-y-4 hidden">
+                    <input type="text" id="otpCodeInput" required maxlength="6" class="w-full bg-slate-900 border border-slate-800 rounded-xl px-4 py-3 text-xs text-center font-black tracking-widest text-white" placeholder="123456">
+                    <button type="submit" class="w-full bg-emerald-600 text-white font-bold py-3 rounded-xl text-xs">تأكيد ودخول لوحة التحكم</button>
+                </form>
+            </div>
+
+            <div id="otpStatusMsg" class="mt-4 text-xs font-bold text-center"></div>
+        </div>
+    </div>
+
+    <!-- Modal: Reader -->
+    <div id="readerModal" class="fixed inset-0 z-50 bg-slate-950/95 flex flex-col hidden backdrop-blur-2xl">
+        <div class="p-4 bg-slate-900 border-b border-slate-800 text-white flex items-center justify-between">
+            <div class="flex items-center space-x-3 space-x-reverse">
+                <button onclick="closeReader()" class="p-2 text-slate-400 hover:text-white"><i class="fa-solid fa-arrow-right text-lg"></i></button>
+                <div>
+                    <h3 id="readerTitle" class="text-sm font-bold text-slate-100">عنوان الكتاب</h3>
+                    <p id="readerAuthor" class="text-xs text-indigo-400">المؤلف</p>
+                </div>
+            </div>
+            <button onclick="closeReader()" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition">إغلاق القارئ</button>
+        </div>
+        <div id="readerBody" class="flex-grow p-6 md:p-12 overflow-y-auto max-w-3xl mx-auto text-slate-300 leading-relaxed text-base space-y-4 whitespace-pre-wrap"></div>
+    </div>
+
+    <script>
+        (function(){ emailjs.init("3M8EfmiQysdeEcA6p"); })();
+
+        const SERVICE_ID = "moataz_ramdan_tikread";
+        const TEMPLATE_ID = "template_3huuzgl";
+        const ADMIN_EMAIL = "moatazramdan3453@gmail.com";
+
+        let generatedOTP = null;
+        let pendingReaderData = null;
+        let currentUser = null;
+        let booksData = [];
+        let achievementsData = [];
+        let favsData = [];
+        let currentActiveBook = null;
+        let deferredPrompt = null;
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            document.getElementById('installAppBtn').classList.remove('hidden');
+            document.getElementById('installAppBtn').classList.add('flex');
+        });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') showToast('تم بدء تثبيت التطبيق بنجاح! 🎉');
+                    deferredPrompt = null;
+                    document.getElementById('installAppBtn').classList.add('hidden');
+                });
+            }
+        }
+
+        window.onload = function() {
+            const savedBooks = localStorage.getItem('tikread_books_v6');
+            if (savedBooks) {
+                booksData = JSON.parse(savedBooks);
+            } else {
+                booksData = [
+                    { 
+                        id: 1, 
+                        title: 'مدينة الزمرد', 
+                        author: 'معتز رمضان', 
+                        category: 'رواية خيالية', 
+                        pages: 75, 
+                        year: 2026, 
+                        price: 9.99,
+                        image: 'https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png', 
+                        description: 'رواية خيالية مشوقة تأخذك في رحلة فريدة داخل عوالم السحر والجمال مع ساندي وزين.', 
+                        content: 'هذه رواية مدينة الزمرد الرسمية ضمن إصدارات المنصة...' 
+                    }
+                ];
+            }
+
+            const savedAch = localStorage.getItem('tikread_achievements_v4');
+            if (savedAch) {
+                achievementsData = JSON.parse(savedAch);
+            } else {
+                achievementsData = [
+                    { id: 1, title: 'عن منصة TikRead', type: 'image', media: 'https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png', description: 'منصة رقمية متكاملة تهدف إلى نشر الكتب الرقمية وتوفير تجربة قراءة فريدة.' }
+                ];
+            }
+
+            const savedUser = localStorage.getItem('tikread_user');
+            if (savedUser) currentUser = JSON.parse(savedUser);
+            else currentUser = { name: 'زائر', email: '', isGuest: true };
+
+            const savedFavs = localStorage.getItem('tikread_favs');
+            if (savedFavs) favsData = JSON.parse(savedFavs);
+
+            updateAuthUI();
+            renderBooks();
+            renderAchievements();
+            renderFavs();
+        };
+
+        function updateAuthUI() {
+            const authArea = document.getElementById('authArea');
+            const guestBanner = document.getElementById('guestBanner');
+            const navAddBook = document.getElementById('nav-addbook');
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+            if (isAdmin) {
+                guestBanner.classList.add('hidden');
+                navAddBook.classList.remove('hidden');
+                authArea.innerHTML = `
+                    <div class="flex items-center space-x-2.5 space-x-reverse bg-slate-900/90 border border-indigo-500/30 p-1.5 rounded-2xl">
+                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-bold flex items-center justify-center text-xs shadow-md">م</div>
+                        <div class="hidden sm:block text-right px-1">
+                            <span class="block text-xs font-bold text-slate-200">معتز رمضان</span>
+                            <span class="block text-[10px] text-indigo-400 font-medium">لوحة تحكم المسؤول ⚡</span>
+                        </div>
+                        <button onclick="logout()" title="تسجيل خروج" class="p-2 text-slate-400 hover:text-rose-400 transition"><i class="fa-solid fa-power-off text-sm"></i></button>
+                    </div>
+                `;
+            } else if (!currentUser.isGuest) {
+                guestBanner.classList.add('hidden');
+                navAddBook.classList.add('hidden');
+                authArea.innerHTML = `
+                    <div class="flex items-center space-x-2.5 space-x-reverse bg-slate-900/90 border border-slate-800 p-1.5 rounded-2xl">
+                        <div class="w-8 h-8 rounded-xl bg-indigo-600/30 border border-indigo-500/30 text-indigo-300 font-bold flex items-center justify-center text-xs">${currentUser.name.charAt(0)}</div>
+                        <div class="hidden sm:block text-right px-1">
+                            <span class="block text-xs font-bold text-slate-200">${currentUser.name}</span>
+                            <span class="block text-[10px] text-emerald-400 font-medium">قارئ مسجل 📖</span>
+                        </div>
+                        <button onclick="logout()" title="تسجيل خروج" class="p-2 text-slate-400 hover:text-rose-400 transition"><i class="fa-solid fa-power-off text-sm"></i></button>
+                    </div>
+                `;
+            } else {
+                guestBanner.classList.remove('hidden');
+                navAddBook.classList.add('hidden');
+                authArea.innerHTML = `
+                    <div class="flex gap-2">
+                        <button onclick="openAuthModal('reader')" class="bg-indigo-600 hover:bg-indigo-500 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold shadow-lg transition">تسجيل قارئ</button>
+                        <button onclick="openAuthModal('admin')" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2.5 rounded-xl text-xs font-bold border border-slate-700 transition" title="دخول المسؤول"><i class="fa-solid fa-lock"></i></button>
+                    </div>
+                `;
+            }
+        }
+
+        function openAuthModal(type) {
+            document.getElementById('readerAuthBox').classList.add('hidden');
+            document.getElementById('adminAuthBox').classList.add('hidden');
+            document.getElementById('otpStatusMsg').textContent = '';
+
+            if (type === 'reader') {
+                document.getElementById('readerEmailForm').classList.remove('hidden');
+                document.getElementById('readerVerifyForm').classList.add('hidden');
+                document.getElementById('readerAuthBox').classList.remove('hidden');
+            } else {
+                document.getElementById('otpEmailForm').classList.remove('hidden');
+                document.getElementById('otpVerifyForm').classList.add('hidden');
+                document.getElementById('adminAuthBox').classList.remove('hidden');
+            }
+            document.getElementById('authModal').classList.remove('hidden');
+        }
+
+        function closeAuthModal() { document.getElementById('authModal').classList.add('hidden'); }
+
+        function sendReaderOTP(e) {
+            e.preventDefault();
+            const name = document.getElementById('readerNameInput').value.trim();
+            const email = document.getElementById('readerEmailInput').value.trim();
+            const statusMsg = document.getElementById('otpStatusMsg');
+            const sendBtn = document.getElementById('sendReaderOtpBtn');
+
+            if (!name || !email) return;
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            pendingReaderData = { name, email };
+            sendBtn.disabled = true;
+            statusMsg.textContent = "جاري إرسال رمز التحقق إلى بريدك...";
+
+            emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: email, passcode: generatedOTP })
+            .then(function() {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-emerald-400";
+                statusMsg.textContent = "تم إرسال رمز التحقق بنجاح!";
+                document.getElementById('readerEmailForm').classList.add('hidden');
+                document.getElementById('readerVerifyForm').classList.remove('hidden');
+            }, function() {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-rose-500";
+                statusMsg.textContent = "فشل إرسال البريد، تأكد من صحة البريد الإلكتروني.";
+                sendBtn.disabled = false;
+            });
+        }
+
+        function verifyReaderOTP(e) {
+            e.preventDefault();
+            const enteredOTP = document.getElementById('readerOtpCodeInput').value.trim();
+            const statusMsg = document.getElementById('otpStatusMsg');
+
+            if (enteredOTP === generatedOTP && pendingReaderData) {
+                currentUser = { name: pendingReaderData.name, email: pendingReaderData.email, isGuest: false };
+                localStorage.setItem('tikread_user', JSON.stringify(currentUser));
+                updateAuthUI();
+                closeAuthModal();
+                showToast('أهلاً بك يا ' + currentUser.name + '، تم تسجيل حسابك بنجاح! 🎉');
+            } else {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-rose-500";
+                statusMsg.textContent = "رمز التحقق غير صحيح.";
+            }
+        }
+
+        function sendOTP(e) {
+            e.preventDefault();
+            const email = document.getElementById('userEmailInput').value.trim();
+            const statusMsg = document.getElementById('otpStatusMsg');
+            const sendBtn = document.getElementById('sendOtpBtn');
+
+            if (!email) return;
+            if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-rose-500";
+                statusMsg.textContent = "هذا البريد غير مصرح له بالدخول كمسؤول.";
+                return;
+            }
+
+            generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+            sendBtn.disabled = true;
+            statusMsg.textContent = "جاري إرسال رمز التحقق للمسؤول...";
+
+            emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: email, passcode: generatedOTP })
+            .then(function() {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-emerald-400";
+                statusMsg.textContent = "تم إرسال رمز التحقق إلى بريدك!";
+                document.getElementById('otpEmailForm').classList.add('hidden');
+                document.getElementById('otpVerifyForm').classList.remove('hidden');
+            }, function() {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-rose-500";
+                statusMsg.textContent = "فشل الإرسال، حاول مجدداً.";
+                sendBtn.disabled = false;
+            });
+        }
+
+        function verifyOTP(e) {
+            e.preventDefault();
+            const email = document.getElementById('userEmailInput').value.trim();
+            const enteredOTP = document.getElementById('otpCodeInput').value.trim();
+            const statusMsg = document.getElementById('otpStatusMsg');
+
+            if (enteredOTP === generatedOTP && email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) {
+                currentUser = { name: 'معتز رمضان', email: email, isGuest: false };
+                localStorage.setItem('tikread_user', JSON.stringify(currentUser));
+                updateAuthUI();
+                closeAuthModal();
+                showToast('أهلاً بك يا معتز، تم تفعيل صلاحيات المسؤول بنجاح!');
+            } else {
+                statusMsg.className = "mt-4 text-xs font-bold text-center text-rose-500";
+                statusMsg.textContent = "رمز التحقق غير صحيح.";
+            }
+        }
+
+        function logout() {
+            currentUser = { name: 'زائر', email: '', isGuest: true };
+            localStorage.removeItem('tikread_user');
+            updateAuthUI();
+            switchTab('store');
+            showToast('تم تسجيل الخروج بنجاح.');
+        }
+
+        function switchTab(tabName) {
+            ['store', 'achievements', 'favs', 'addbook'].forEach(sec => {
+                document.getElementById('sec-' + sec).classList.add('hidden');
+            });
+            document.getElementById('sec-' + tabName).classList.remove('hidden');
+            if (tabName === 'achievements') renderAchievements();
+            if (tabName === 'favs') renderFavs();
+        }
+
+        function toggleAchInputType() {
+            const type = document.getElementById('achType').value;
+            if (type === 'video') {
+                document.getElementById('achImageContainer').classList.add('hidden');
+                document.getElementById('achVideoContainer').classList.remove('hidden');
+            } else {
+                document.getElementById('achImageContainer').classList.remove('hidden');
+                document.getElementById('achVideoContainer').classList.add('hidden');
+            }
+        }
+
+        function toggleFav(bookId) {
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+            const index = favsData.findIndex(f => f.id === bookId);
+            if (index > -1) {
+                favsData.splice(index, 1);
+                showToast('تمت الإزالة من المفضلة.');
+            } else {
+                favsData.push(book);
+                showToast('تمت الإضافة للمفضلة ❤️');
+            }
+            localStorage.setItem('tikread_favs', JSON.stringify(favsData));
+            renderBooks();
+            renderFavs();
+        }
+
+        function deleteBook(bookId) {
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+            if (!isAdmin) return;
+            if (confirm('هل أنت متأكد من حذف هذا الكتاب نهائياً؟')) {
+                booksData = booksData.filter(b => b.id !== bookId);
+                localStorage.setItem('tikread_books_v6', JSON.stringify(booksData));
+                renderBooks();
+                showToast('تم حذف الكتاب بنجاح.');
+            }
+        }
+
+        function addNewBook(e) {
+            e.preventDefault();
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+            if (!isAdmin) return;
+
+            const fileInput = document.getElementById('newBookImageFile');
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    saveNewBookData(event.target.result);
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                saveNewBookData('https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png');
+            }
+        }
+
+        function saveNewBookData(imageUrl) {
+            const customPrice = parseFloat(document.getElementById('newBookPrice').value);
+            const newBook = {
+                id: Date.now(),
+                title: document.getElementById('newBookTitle').value.trim(),
+                author: document.getElementById('newBookAuthor').value.trim(),
+                category: document.getElementById('newBookCategory').value.trim(),
+                pages: document.getElementById('newBookPages').value.trim(),
+                year: document.getElementById('newBookYear').value.trim(),
+                price: isNaN(customPrice) ? 9.99 : customPrice,
+                image: imageUrl,
+                description: document.getElementById('newBookDescription').value.trim(),
+                content: document.getElementById('newBookContent').value.trim()
+            };
+            booksData.unshift(newBook);
+            localStorage.setItem('tikread_books_v6', JSON.stringify(booksData));
+            document.querySelector('#sec-addbook form').reset();
+            renderBooks();
+            switchTab('store');
+            showToast('تم نشر الكتاب بالسعر المخصص بنجاح! 📚');
+        }
+
+        function addNewAchievement(e) {
+            e.preventDefault();
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+            if (!isAdmin) return;
+
+            const type = document.getElementById('achType').value;
+            const title = document.getElementById('achTitle').value.trim();
+            const description = document.getElementById('achDesc').value.trim();
+
+            if (type === 'video') {
+                const mediaUrl = document.getElementById('achMediaUrl').value.trim();
+                saveNewAchievementData(type, mediaUrl, title, description);
+            } else {
+                const fileInput = document.getElementById('achImageFile');
+                if (fileInput.files && fileInput.files[0]) {
+                    const reader = new FileReader();
+                    reader.onload = function(event) {
+                        saveNewAchievementData('image', event.target.result, title, description);
+                    };
+                    reader.readAsDataURL(fileInput.files[0]);
+                } else {
+                    saveNewAchievementData('image', 'https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png', title, description);
+                }
+            }
+        }
+
+        function saveNewAchievementData(type, media, title, description) {
+            const newAch = { id: Date.now(), title, type, media, description };
+            achievementsData.unshift(newAch);
+            localStorage.setItem('tikread_achievements_v4', JSON.stringify(achievementsData));
+            document.querySelectorAll('#sec-addbook form')[1].reset();
+            toggleAchInputType();
+            renderAchievements();
+            switchTab('achievements');
+            showToast('تم نشر التعريف أو فيديو الإنجاز بنجاح! 🚀');
+        }
+
+        function renderBooks() {
+            const grid = document.getElementById('booksGrid');
+            if (booksData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 text-xs">لا توجد كتب متاحة حالياً.</div>`;
+                return;
+            }
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+            grid.innerHTML = booksData.map(book => {
+                const isFav = favsData.some(f => f.id === book.id);
+                return `
+                    <div class="cyber-glass rounded-2xl overflow-hidden border border-slate-800 cyber-glow flex flex-col justify-between group">
+                        <div class="relative aspect-[3/4] overflow-hidden cursor-pointer bg-slate-950" onclick="openDetails(${book.id})">
+                            <img src="${book.image}" onerror="this.src='https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png'" class="w-full h-full object-cover group-hover:scale-105 transition duration-500" alt="${book.title}">
+                            <span class="absolute bottom-2 right-2 px-2 py-0.5 bg-slate-950/80 rounded-md text-[10px] text-indigo-300 font-bold border border-slate-800">${book.category || 'عام'}</span>
+                            <span class="absolute top-2.5 right-2.5 px-2 py-1 bg-emerald-950/90 text-emerald-300 font-black rounded-lg text-[10px] border border-emerald-500/30">$${book.price ?? 9.99}</span>
+                            <button onclick="event.stopPropagation(); toggleFav(${book.id})" class="absolute top-2.5 left-2.5 p-2 bg-slate-950/80 rounded-xl text-xs border border-slate-800 ${isFav ? 'text-rose-500' : 'text-slate-400'}"><i class="fa-solid fa-heart"></i></button>
+                        </div>
+                        <div class="p-4 flex-grow flex flex-col justify-between">
+                            <div class="cursor-pointer" onclick="openDetails(${book.id})">
+                                <h3 class="font-bold text-slate-100 text-xs sm:text-sm line-clamp-1">${book.title}</h3>
+                                <p class="text-[11px] text-indigo-400 mt-0.5">${book.author}</p>
+                            </div>
+                            <div class="mt-4 space-y-2">
+                                <button onclick="openDetails(${book.id})" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-2 rounded-xl text-xs shadow">قراءة وتفاصيل الكتاب 📖</button>
+                                ${isAdmin ? `<button onclick="deleteBook(${book.id})" class="w-full bg-rose-950/40 text-rose-400 border border-rose-500/20 py-1 rounded-lg text-[10px] font-bold">حذف الكتاب 🗑️</button>` : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function renderAchievements() {
+            document.getElementById('myAchCount').innerText = achievementsData.length;
+            const grid = document.getElementById('achievementsGrid');
+            if (achievementsData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-20 text-slate-500 text-xs">لا توجد تعاريف أو إنجازات منشورة حالياً.</div>`;
+                return;
+            }
+            const isAdmin = !currentUser.isGuest && currentUser.email.toLowerCase() === ADMIN_EMAIL.toLowerCase();
+
+            grid.innerHTML = achievementsData.map(item => {
+                let mediaHtml = '';
+                if (item.media) {
+                    if (item.type === 'video' || item.media.includes('youtube.com') || item.media.includes('youtu.be')) {
+                        let videoId = '';
+                        if (item.media.includes('youtu.be/')) videoId = item.media.split('youtu.be/')[1].split('?')[0];
+                        else if (item.media.includes('watch?v=')) videoId = item.media.split('watch?v=')[1].split('&')[0];
+                        const embedUrl = videoId ? `https://www.youtube.com/embed/${videoId}` : item.media;
+                        mediaHtml = `<div class="aspect-video w-full rounded-xl overflow-hidden mb-3 bg-slate-950"><iframe src="${embedUrl}" class="w-full h-full" frameborder="0" allowfullscreen></iframe></div>`;
+                    } else {
+                        mediaHtml = `<img src="${item.media}" onerror="this.src='https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png'" class="w-full aspect-video object-cover rounded-xl mb-3 border border-slate-800" alt="">`;
+                    }
+                }
+                return `
+                    <div class="cyber-glass rounded-2xl p-5 border border-slate-800 flex flex-col justify-between">
+                        <div>
+                            <span class="px-2.5 py-1 rounded-md ${item.type === 'video' ? 'bg-cyan-500/20 text-cyan-300' : 'bg-indigo-500/20 text-indigo-300'} text-[10px] font-bold mb-3 inline-block">
+                                ${item.type === 'video' ? 'فيديو إنجاز 🎬' : 'تعريف بالموقع 🖼️'}
+                            </span>
+                            ${mediaHtml}
+                            <h3 class="font-bold text-slate-100 text-sm sm:text-base mb-2">${item.title}</h3>
+                            <p class="text-xs text-slate-400 leading-relaxed">${item.description}</p>
+                        </div>
+                        ${isAdmin ? `<button onclick="deleteAchievement(${item.id})" class="mt-4 w-full bg-rose-950/40 text-rose-400 border border-rose-500/20 py-1.5 rounded-xl text-xs font-bold">حذف العنصر 🗑</button>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openDetails(bookId) {
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+            currentActiveBook = book;
+            document.getElementById('detImage').src = book.image;
+            document.getElementById('detCategory').innerText = book.category || 'عام';
+            document.getElementById('detTitle').innerText = book.title;
+            document.getElementById('detAuthor').innerText = "تأليف: " + book.author;
+            document.getElementById('detPages').innerText = book.pages || '75';
+            document.getElementById('detYear').innerText = book.year || '2026';
+            document.getElementById('detPrice').innerText = book.price ?? '9.99';
+            document.getElementById('detDesc').innerText = book.description || 'لا توجد نبذة تفصيلية متوفرة.';
+
+            document.getElementById('detReadBtn').onclick = function() {
+                closeDetailsModal();
+                openReader(book.id);
+            };
+
+            document.getElementById('detailsModal').classList.remove('hidden');
+        }
+
+        function closeDetailsModal() { document.getElementById('detailsModal').classList.add('hidden'); }
+
+        function renderFavs() {
+            const grid = document.getElementById('favsGrid');
+            grid.innerHTML = favsData.length ? favsData.map(book => `
+                <div class="cyber-glass rounded-2xl overflow-hidden border border-slate-800 p-3 flex flex-col justify-between">
+                    <img src="${book.image}" onerror="this.src='https://i.ibb.co/6y40F11v/Pink-Modern-June-Bookings-Appointment-Available-Announcement-Instagram-Post.png'" class="w-full aspect-[3/4] object-cover rounded-xl mb-3">
+                    <h3 class="font-bold text-slate-100 text-xs line-clamp-1">${book.title}</h3>
+                    <button onclick="openDetails(${book.id})" class="w-full mt-3 bg-indigo-600 text-white font-bold py-2 rounded-xl text-xs">عرض التفاصيل</button>
+                </div>
+            `).join('') : `<div class="col-span-full text-center py-20 text-slate-500 text-xs">لا توجد كتب في المفضلة.</div>`;
+        }
+
+        function openReader(bookId) {
+            const book = booksData.find(b => b.id === bookId);
+            if (!book) return;
+            document.getElementById('readerTitle').innerText = book.title;
+            document.getElementById('readerAuthor').innerText = "تأليف: " + book.author;
+            document.getElementById('readerBody').innerText = book.content;
+            document.getElementById('readerModal').classList.remove('hidden');
+        }
+
+        function closeReader() { document.getElementById('readerModal').classList.add('hidden'); }
+
+        function showToast(msg) {
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-6 left-6 z-50 cyber-glass border border-emerald-500/30 text-white px-5 py-3 rounded-2xl text-xs font-bold shadow-2xl';
+            toast.innerText = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
